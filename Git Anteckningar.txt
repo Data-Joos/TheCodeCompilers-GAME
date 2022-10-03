@@ -1,0 +1,13 @@
+# Kör kommandotolken och gå till den mapp du vill skapa ditt lokala Repository under.
+
+git clone Http-adressen #adressen finns på Repositoryt under "Code". Klonar repositoryn till sin mapp
+git status #få fram status på lokala repot, där står det ifall du gjort ändringar osv.
+
+#Sedan öppna mappen i python. Gör dina ändringar i vilken fil du vill alternativt skapa en ny fil där.
+
+git add . eller git add filnamn.py #Detta för att lägga till ändringarna lokalt. För och få med allt avsluta med "." eller skriv filnamnet för och få med en specifik fil. 
+git commit -m "Mitt meddelande till ändringen" #Här sparas ändringarna lokalt. Det som skriver under "" är ditt meddelande som dyker upp för andra sen.
+git push #För att publicera uppåt ( När man tryckt enter här så behövs Token sedan anges för att få tillåtelse och publicera).
+
+git pull #för att ta emot andras ändringar.
+git log #för att se historik.
