@@ -107,23 +107,11 @@ class Player(pg.sprite.Sprite):
         pos = self.facing * self.gun_offset + self.rect.centerx
         return pos, self.rect.top
 
-class OtherEnemies(pg.sprite.Sprite):
-    images = []
-
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self, self.containers)
-        self.image = self.images[0]
-        self.image = pg.transform.scale(self.image, (10, 10))
-        self.rect = pg.Rect(10, 10, 10, 10)
-        # self.rect = pg.Rect.inflate(self.rect, 2, 2)
-        
-    # def update()
-        
 
 class Alien(pg.sprite.Sprite):
     """An alien space ship. That slowly moves down the screen."""
 
-    speed = 1
+    speed = 13
     animcycle = 12
     images = []
 
@@ -145,12 +133,6 @@ class Alien(pg.sprite.Sprite):
         self.frame = self.frame + 1
         self.image = self.images[self.frame // self.animcycle % 3]
 
-class AlienOtherDirection(Alien):
-    
-    speed = -10
-    def __init__(self):
-        super().__init__()
-        self.facing = AlienOtherDirection.speed
 
 class Explosion(pg.sprite.Sprite):
     """An explosion. Hopefully the Alien and not the player!"""
@@ -188,17 +170,14 @@ class Shot(pg.sprite.Sprite):
     def __init__(self, pos):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
-        # self.rect = self.image.get_rect(midbottom=pos)
-        self.image = self.images[0]
-        self.image = pg.transform.scale(self.image, (50, 50))
-        self.rect = pg.Rect(pos[0], pos[1], 50, 50)
+        self.rect = self.image.get_rect(midbottom=pos)
 
     def update(self):
         """called every time around the game loop.
 
         Every tick we move the shot upwards.
         """
-        self.rect.move_ip(0, self.speed)
+        self.rect.move_ip(self.speed, self.speed)
         if self.rect.top <= 0:
             self.kill()
 
@@ -270,16 +249,14 @@ def main(winstyle=0):
     Player.images = [img, pg.transform.flip(img, 1, 0)]
     img = load_image("explosion1.gif")
     Explosion.images = [img, pg.transform.flip(img, 1, 1)]
-    Alien.images = [load_image(im) for im in ("chimp.png", "chimp.png", "chimp.png")]
-    AlienOtherDirection.images = [load_image(im) for im in ("alien1.gif", "alien2.gif", "alien3.gif")]
-    OtherEnemies.images = [load_image(im) for im in ("nedladdning.jfif", "chimp.png", "chimp.png")]
+    Alien.images = [load_image(im) for im in ("alien1.gif", "alien2.gif", "alien3.gif")]
     Bomb.images = [load_image("bomb.gif")]
-    Shot.images = [load_image("nedladdning.jfif")]
+    Shot.images = [load_image("shot.gif")]
 
     # decorate the game window
     icon = pg.transform.scale(Alien.images[0], (32, 32))
     pg.display.set_icon(icon)
-    pg.display.set_caption("Pygame Tysenator")
+    pg.display.set_caption("Pygame Aliens")
     pg.mouse.set_visible(0)
 
     # create the background, tile the bgd image
@@ -308,7 +285,6 @@ def main(winstyle=0):
     # assign default groups to each sprite class
     Player.containers = all
     Alien.containers = aliens, all, lastalien
-    OtherEnemies.containers = aliens, all
     Shot.containers = shots, all
     Bomb.containers = bombs, all
     Explosion.containers = all
@@ -323,8 +299,6 @@ def main(winstyle=0):
     global SCORE
     player = Player()
     Alien()  # note, this 'lives' because it goes into a sprite group
-    AlienOtherDirection()
-    OtherEnemies()
     if pg.font:
         all.add(Score())
 
@@ -378,10 +352,7 @@ def main(winstyle=0):
         if alienreload:
             alienreload = alienreload - 1
         elif not int(random.random() * ALIEN_ODDS):
-            if(random.randint(0, 1) == 0):
-                Alien()
-            else:
-                AlienOtherDirection()
+            Alien()
             alienreload = ALIEN_RELOAD
 
         # Drop bombs
@@ -417,7 +388,7 @@ def main(winstyle=0):
         pg.display.update(dirty)
 
         # cap the framerate at 40fps. Also called 40HZ or 40 times per second.
-        clock.tick(40)
+        clock.tick(5)
 
     if pg.mixer:
         pg.mixer.music.fadeout(1000)
