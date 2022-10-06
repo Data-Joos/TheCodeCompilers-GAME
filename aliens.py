@@ -35,6 +35,8 @@ if not pg.image.get_extended():
 
 
 # game constants
+THANOS_ODDS = 22
+THANOS_RELOAD = 12
 MAX_SHOTS = 2  # most player bullets onscreen
 ALIEN_ODDS = 22  # chances a new alien appears
 BOMB_ODDS = 60  # chances a new bomb will drop
@@ -79,7 +81,7 @@ def load_sound(file):
 class Player(pg.sprite.Sprite):
     """Representing the player as a moon buggy type car."""
 
-    speed = 10
+    speed = 25
     bounce = 24
     gun_offset = -11
     images = []
@@ -107,6 +109,29 @@ class Player(pg.sprite.Sprite):
         pos = self.facing * self.gun_offset + self.rect.centerx
         return pos, self.rect.top
 
+class Thanos(pg.sprite.Sprite):
+    
+    speed = 13
+    animcycle = 12
+    images = []
+
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.facing = random.choice((-1, 1)) * Thanos.speed
+        self.frame = 0
+        if self.facing < 0:
+            self.rect.right = SCREENRECT.right
+
+    def update(self):
+        self.rect.move_ip(self.facing, 0)
+        if not SCREENRECT.contains(self.rect):
+            self.facing = -self.facing
+            self.rect.top = self.rect.bottom + 1
+            self.rect = self.rect.clamp(SCREENRECT)
+        self.frame = self.frame + 1
+        self.image = self.images[self.frame // self.animcycle % 3]
 
 class Alien(pg.sprite.Sprite):
     """An alien space ship. That slowly moves down the screen."""
@@ -164,7 +189,7 @@ class Explosion(pg.sprite.Sprite):
 class Shot(pg.sprite.Sprite):
     """a bullet the Player sprite fires."""
 
-    speed = -11
+    speed = -35
     images = []
 
     def __init__(self, pos):
@@ -177,7 +202,7 @@ class Shot(pg.sprite.Sprite):
 
         Every tick we move the shot upwards.
         """
-        self.rect.move_ip(self.speed, self.speed)
+        self.rect.move_ip(0, self.speed)
         if self.rect.top <= 0:
             self.kill()
 
@@ -250,6 +275,7 @@ def main(winstyle=0):
     img = load_image("explosion1.gif")
     Explosion.images = [img, pg.transform.flip(img, 1, 1)]
     Alien.images = [load_image(im) for im in ("alien1.gif", "alien2.gif", "alien3.gif")]
+    Thanos.images = [load_image(im) for im in ("thanos.gif", "thanos.gif", "thanos.gif")]
     Bomb.images = [load_image("bomb.gif")]
     Shot.images = [load_image("shot.gif")]
 
@@ -277,14 +303,17 @@ def main(winstyle=0):
 
     # Initialize Game Groups
     aliens = pg.sprite.Group()
+    thanoss = pg.sprite.Group()
     shots = pg.sprite.Group()
     bombs = pg.sprite.Group()
     all = pg.sprite.RenderUpdates()
     lastalien = pg.sprite.GroupSingle()
+    lastthanos = pg.sprite.GroupSingle()
 
     # assign default groups to each sprite class
     Player.containers = all
     Alien.containers = aliens, all, lastalien
+    Thanos.containers = thanoss, all, lastthanos
     Shot.containers = shots, all
     Bomb.containers = bombs, all
     Explosion.containers = all
@@ -293,12 +322,17 @@ def main(winstyle=0):
     # Create Some Starting Values
     global score
     alienreload = ALIEN_RELOAD
+    thanosreload = THANOS_RELOAD
     clock = pg.time.Clock()
 
     # initialize our starting sprites
     global SCORE
     player = Player()
     Alien()  # note, this 'lives' because it goes into a sprite group
+    if pg.font:
+        all.add(Score())
+    
+    Thanos()
     if pg.font:
         all.add(Score())
 
@@ -354,10 +388,20 @@ def main(winstyle=0):
         elif not int(random.random() * ALIEN_ODDS):
             Alien()
             alienreload = ALIEN_RELOAD
+    
+        # Create new Thanos
+        if thanosreload:
+            thanosreload = thanosreload - 1
+        elif not int(random.random() * THANOS_ODDS):
+            Thanos()
+            thanosreload = THANOS_RELOAD
 
         # Drop bombs
         if lastalien and not int(random.random() * BOMB_ODDS):
             Bomb(lastalien.sprite)
+
+        if lastthanos and not int(random.random() * BOMB_ODDS):
+            Bomb(lastthanos.sprite)
 
         # Detect collisions between aliens and players.
         for alien in pg.sprite.spritecollide(player, aliens, 1):
@@ -368,13 +412,27 @@ def main(winstyle=0):
             SCORE = SCORE + 1
             player.kill()
 
+        # Detect collisions between aliens and Thanos.
+        for thanos in pg.sprite.spritecollide(player, thanoss, 1):
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(thanos)
+            Explosion(player)
+            SCORE = SCORE + 1
+            player.kill()
+
         # See if shots hit the aliens.
         for alien in pg.sprite.groupcollide(aliens, shots, 1, 1).keys():
             if pg.mixer:
                 boom_sound.play()
             Explosion(alien)
-            SCORE = SCORE + 1
+            SCORE = SCORE + 1   
 
+        for thanos in pg.sprite.groupcollide(thanoss, shots, 1, 1).keys():
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(thanos)
+            SCORE = SCORE + 1   
         # See if alien boms hit the player.
         for bomb in pg.sprite.spritecollide(player, bombs, 1):
             if pg.mixer:
