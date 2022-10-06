@@ -35,10 +35,12 @@ if not pg.image.get_extended():
 
 
 # game constants
-MAX_SHOTS = 2  # most player bullets onscreen
+MAX_SHOTS = 20  # most player bullets onscreen
 ALIEN_ODDS = 22  # chances a new alien appears
+DRAGON_ODDS = 22 # chances a new dragon appears
 BOMB_ODDS = 60  # chances a new bomb will drop
 ALIEN_RELOAD = 12  # frames between new aliens
+DRAGON_RELOAD = 12 # frames between new dragons
 SCREENRECT = pg.Rect(0, 0, 640, 480)
 SCORE = 0
 
@@ -79,9 +81,9 @@ def load_sound(file):
 class Player(pg.sprite.Sprite):
     """Representing the player as a moon buggy type car."""
 
-    speed = 10
-    bounce = 24
-    gun_offset = -11
+    speed = 30
+    bounce = 20
+    gun_offset = 5
     images = []
 
     def __init__(self):
@@ -107,11 +109,36 @@ class Player(pg.sprite.Sprite):
         pos = self.facing * self.gun_offset + self.rect.centerx
         return pos, self.rect.top
 
+class Dragon(pg.sprite.Sprite):
+    """An Dragon that slowly moves dwon the screen"""
+
+    speed = 18
+    animcycle = 12
+    images = []
+
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.facing = random.choice((-1, 1)) * Dragon.speed
+        self.frame = 0
+        if self.facing < 0:
+            self.rect.right = SCREENRECT.right
+
+    def update(self):
+        self.rect.move_ip(self.facing, 0)
+        if not SCREENRECT.contains(self.rect):
+            self.facing = -self.facing
+            self.rect.top = self.rect.bottom + 1
+            self.rect = self.rect.clamp(SCREENRECT)
+        self.frame = self.frame + 1
+        self.image = self.images[self.frame // self.animcycle % 3]
+
 
 class Alien(pg.sprite.Sprite):
     """An alien space ship. That slowly moves down the screen."""
 
-    speed = 13
+    speed = 18
     animcycle = 12
     images = []
 
@@ -164,7 +191,7 @@ class Explosion(pg.sprite.Sprite):
 class Shot(pg.sprite.Sprite):
     """a bullet the Player sprite fires."""
 
-    speed = -11
+    speed = -30
     images = []
 
     def __init__(self, pos):
@@ -177,7 +204,7 @@ class Shot(pg.sprite.Sprite):
 
         Every tick we move the shot upwards.
         """
-        self.rect.move_ip(self.speed, self.speed)
+        self.rect.move_ip(0, self.speed)
         if self.rect.top <= 0:
             self.kill()
 
@@ -185,7 +212,7 @@ class Shot(pg.sprite.Sprite):
 class Bomb(pg.sprite.Sprite):
     """A bomb the aliens drop."""
 
-    speed = 9
+    speed = 15
     images = []
 
     def __init__(self, alien):
@@ -249,6 +276,7 @@ def main(winstyle=0):
     Player.images = [img, pg.transform.flip(img, 1, 0)]
     img = load_image("explosion1.gif")
     Explosion.images = [img, pg.transform.flip(img, 1, 1)]
+    Dragon.images = [load_image(im) for im in ("dragon.gif", "dragon.gif", "dragon.gif")]
     Alien.images = [load_image(im) for im in ("alien1.gif", "alien2.gif", "alien3.gif")]
     Bomb.images = [load_image("bomb.gif")]
     Shot.images = [load_image("shot.gif")]
@@ -277,14 +305,17 @@ def main(winstyle=0):
 
     # Initialize Game Groups
     aliens = pg.sprite.Group()
+    dragons = pg.sprite.Group()
     shots = pg.sprite.Group()
     bombs = pg.sprite.Group()
     all = pg.sprite.RenderUpdates()
     lastalien = pg.sprite.GroupSingle()
+    lastdragon = pg.sprite.GroupSingle()
 
     # assign default groups to each sprite class
     Player.containers = all
     Alien.containers = aliens, all, lastalien
+    Dragon.containers = dragons, all, lastdragon
     Shot.containers = shots, all
     Bomb.containers = bombs, all
     Explosion.containers = all
@@ -293,15 +324,20 @@ def main(winstyle=0):
     # Create Some Starting Values
     global score
     alienreload = ALIEN_RELOAD
+    dragonreload = DRAGON_RELOAD
     clock = pg.time.Clock()
 
     # initialize our starting sprites
     global SCORE
     player = Player()
-    Alien()  # note, this 'lives' because it goes into a sprite group
+    Dragon()
     if pg.font:
         all.add(Score())
-
+    
+    Alien()  # note, this 'lives' because it goes into a sprite group
+    if pg.font:
+        all.add(Score()) 
+    
     # Run our main loop whilst the player is alive.
     while player.alive():
 
@@ -348,16 +384,36 @@ def main(winstyle=0):
                 shoot_sound.play()
         player.reloading = firing
 
+        # Create new dragon
+        if dragonreload:
+            dragonreload = dragonreload - 1
+        elif not int(random.random() * DRAGON_ODDS):
+            Dragon()
+            dragonreload = DRAGON_RELOAD
+
         # Create new alien
         if alienreload:
             alienreload = alienreload - 1
         elif not int(random.random() * ALIEN_ODDS):
             Alien()
             alienreload = ALIEN_RELOAD
+        
+        # Drop bombs dragon
+        if lastdragon and not int(random.random() * BOMB_ODDS):
+            Bomb(lastdragon.sprite)
 
         # Drop bombs
         if lastalien and not int(random.random() * BOMB_ODDS):
             Bomb(lastalien.sprite)
+
+        # Detect collisions between aliens and players.
+        for dragon in pg.sprite.spritecollide(player, dragons, 1):
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(dragon)
+            Explosion(player)
+            SCORE = SCORE + 1
+            player.kill()
 
         # Detect collisions between aliens and players.
         for alien in pg.sprite.spritecollide(player, aliens, 1):
@@ -367,6 +423,13 @@ def main(winstyle=0):
             Explosion(player)
             SCORE = SCORE + 1
             player.kill()
+
+        # See if shots hit the dragon
+        for dragon in pg.sprite.groupcollide(dragons, shots, 1, 1).keys():
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(dragon)
+            SCORE = SCORE + 1
 
         # See if shots hit the aliens.
         for alien in pg.sprite.groupcollide(aliens, shots, 1, 1).keys():
@@ -398,4 +461,4 @@ def main(winstyle=0):
 # call the "main" function if running this script
 if __name__ == "__main__":
     main()
-    pg.quit()
+    pg.quit() 
