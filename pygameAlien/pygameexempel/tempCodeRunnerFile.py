@@ -1,0 +1,1 @@
+Academyaward.images = [load_image("academyaward2.gif")]

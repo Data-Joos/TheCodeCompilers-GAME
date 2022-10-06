@@ -1,27 +1,27 @@
-#!/usr/bin/env python
-""" pygame.examples.aliens
 
-Shows a mini game where you have to defend against aliens.
+#""" pygame.examples.aliens
 
-What does it show you about pygame?
+#Shows a mini game where you have to defend against aliens.
 
-* pg.sprite, the difference between Sprite and Group.
-* dirty rectangle optimization for processing for speed.
-* music with pg.mixer.music, including fadeout
-* sound effects with pg.Sound
-* event processing, keyboard handling, QUIT handling.
-* a main loop frame limited with a game clock from pg.time.Clock
-* fullscreen switching.
+#What does it show you about pygame?
+
+#* pg.sprite, the difference between Sprite and Group.
+#* dirty rectangle optimization for processing for speed.
+#* music with pg.mixer.music, including fadeout
+#* sound effects with pg.Sound
+#* event processing, keyboard handling, QUIT handling.
+#* a main loop frame limited with a game clock from pg.time.Clock
+#* fullscreen switching.
 
 
-Controls
---------
+#Controls
+#--------
 
-* Left and right arrows to move.
-* Space bar to shoot
-* f key to toggle between fullscreen.
+#* Left and right arrows to move.
+#* Space bar to shoot
+#* f key to toggle between fullscreen.
 
-"""
+#"""
 
 import random
 import os
@@ -37,8 +37,13 @@ if not pg.image.get_extended():
 # game constants
 MAX_SHOTS = 2  # most player bullets onscreen
 ALIEN_ODDS = 22  # chances a new alien appears
+LEO_ODDS = 22
+KALLE_ODDS = 22
+ACADEMYAWARD_ODDS = 80
 BOMB_ODDS = 60  # chances a new bomb will drop
 ALIEN_RELOAD = 12  # frames between new aliens
+LEO_RELOAD = 12
+KALLE_RELOAD = 12
 SCREENRECT = pg.Rect(0, 0, 640, 480)
 SCORE = 0
 
@@ -107,6 +112,55 @@ class Player(pg.sprite.Sprite):
         pos = self.facing * self.gun_offset + self.rect.centerx
         return pos, self.rect.top
 
+class Leo(pg.sprite.Sprite):
+
+    speed = 11
+    animcycle = 12
+    images = []
+
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.facing = random.choice((-1,1)) * Leo.speed
+        self.frame = 0
+        if self.facing < 0:
+            self.rect.right = SCREENRECT.right
+
+
+    def update(self):
+        self.rect.move_ip(self.facing, 0)
+        if not SCREENRECT.contains(self.rect):
+            self.facing = -self.facing
+            self.rect.top = self.rect.bottom +1
+            self.rect = self.rect.clamp(SCREENRECT)
+        self.frame = self.frame +1
+        self.image = self.images[self.frame // self.animcycle % 3]
+
+class Kalle(pg.sprite.Sprite):
+    """An alien space ship. That slowly moves down the screen."""
+
+    speed = 16
+    animcycle = 12
+    images = []
+
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.facing = random.choice((-1, 1)) * Kalle.speed
+        self.frame = 0
+        if self.facing < 0:
+            self.rect.right = SCREENRECT.right
+
+    def update(self):
+        self.rect.move_ip(self.facing, 0)
+        if not SCREENRECT.contains(self.rect):
+            self.facing = -self.facing
+            self.rect.top = self.rect.bottom + 1
+            self.rect = self.rect.clamp(SCREENRECT)
+        self.frame = self.frame + 1
+        self.image = self.images[self.frame // self.animcycle % 3]
 
 class Alien(pg.sprite.Sprite):
     """An alien space ship. That slowly moves down the screen."""
@@ -164,7 +218,7 @@ class Explosion(pg.sprite.Sprite):
 class Shot(pg.sprite.Sprite):
     """a bullet the Player sprite fires."""
 
-    speed = -11
+    speed = -27
     images = []
 
     def __init__(self, pos):
@@ -177,10 +231,34 @@ class Shot(pg.sprite.Sprite):
 
         Every tick we move the shot upwards.
         """
-        self.rect.move_ip(self.speed, self.speed)
+        self.rect.move_ip(0, self.speed)
         if self.rect.top <= 0:
             self.kill()
 
+class Academyaward(pg.sprite.Sprite):
+    """A bomb the aliens drop."""
+
+    speed = 9
+    images = []
+
+    def __init__(self, leo):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect(midbottom=leo.rect.move(0, 5).midbottom)
+
+    def update(self):
+        """called every time around the game loop.
+
+        Every frame we move the sprite 'rect' down.
+        When it reaches the bottom we:
+
+        - make an explosion.
+        - remove the Bomb.
+        """
+        self.rect.move_ip(0, self.speed)
+        if self.rect.bottom >= 470:
+            Explosion(self)
+            self.kill()
 
 class Bomb(pg.sprite.Sprite):
     """A bomb the aliens drop."""
@@ -249,7 +327,10 @@ def main(winstyle=0):
     Player.images = [img, pg.transform.flip(img, 1, 0)]
     img = load_image("explosion1.gif")
     Explosion.images = [img, pg.transform.flip(img, 1, 1)]
+    Leo.images = [load_image(im) for im in ("leoleft2.gif", "leoleft2.gif", "leoleft2.gif")]
+    Kalle.images = [load_image(im) for im in ("kalle.gif", "kalle.gif", "kalle.gif")]
     Alien.images = [load_image(im) for im in ("alien1.gif", "alien2.gif", "alien3.gif")]
+    Academyaward.images = [load_image("academyaward2.gif")]
     Bomb.images = [load_image("bomb.gif")]
     Shot.images = [load_image("shot.gif")]
 
@@ -276,28 +357,44 @@ def main(winstyle=0):
         pg.mixer.music.play(-1)
 
     # Initialize Game Groups
+    leos = pg.sprite.Group()
+    kalles = pg.sprite.Group()
     aliens = pg.sprite.Group()
     shots = pg.sprite.Group()
+    academyawards = pg.sprite.Group()
     bombs = pg.sprite.Group()
     all = pg.sprite.RenderUpdates()
+    lastkalle = pg.sprite.GroupSingle()
+    lastleo = pg.sprite.GroupSingle()
     lastalien = pg.sprite.GroupSingle()
 
     # assign default groups to each sprite class
     Player.containers = all
+    Leo.containers = leos, all, lastleo
+    Kalle.containers = aliens, all, lastkalle
     Alien.containers = aliens, all, lastalien
     Shot.containers = shots, all
+    Academyaward.containers = academyawards, all
     Bomb.containers = bombs, all
     Explosion.containers = all
     Score.containers = all
 
     # Create Some Starting Values
     global score
+    leoreload = LEO_RELOAD
+    kallereload = KALLE_RELOAD
     alienreload = ALIEN_RELOAD
     clock = pg.time.Clock()
 
     # initialize our starting sprites
     global SCORE
     player = Player()
+    Leo()
+    if pg.font:
+        all.add(Score())
+    Kalle()
+    if pg.font:
+        all.add(Score())
     Alien()  # note, this 'lives' because it goes into a sprite group
     if pg.font:
         all.add(Score())
@@ -348,6 +445,20 @@ def main(winstyle=0):
                 shoot_sound.play()
         player.reloading = firing
 
+        #L: Create new Leo
+        if leoreload:
+            leoreload = leoreload -1
+        elif not int(random.random() * LEO_ODDS):
+            Leo()
+            leoreload = LEO_RELOAD
+
+        #L: Create new Kalle
+        if kallereload:
+            kallereload = kallereload -1
+        elif not int(random.random() * KALLE_ODDS):
+            Kalle()
+            kallereload = KALLE_RELOAD
+
         # Create new alien
         if alienreload:
             alienreload = alienreload - 1
@@ -368,12 +479,56 @@ def main(winstyle=0):
             SCORE = SCORE + 1
             player.kill()
 
+        # Detect collisions between aliens and players.
+        for kalle in pg.sprite.spritecollide(player, kalles, 1):
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(kalle)
+            Explosion(player)
+            SCORE = SCORE + 1
+            player.kill()
+
+        # Drop Academy awards
+        if lastleo and not int(random.random() * ACADEMYAWARD_ODDS):
+            Academyaward(lastleo.sprite)
+
+                # Detect collisions between aliens and players.
+        for leo in pg.sprite.spritecollide(player, leos, 1):
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(leo)
+            Explosion(player)
+            SCORE = SCORE + 1
+            player.kill()
+
         # See if shots hit the aliens.
         for alien in pg.sprite.groupcollide(aliens, shots, 1, 1).keys():
             if pg.mixer:
                 boom_sound.play()
             Explosion(alien)
             SCORE = SCORE + 1
+
+        # See if shots hit the kalles.
+        for kalle in pg.sprite.groupcollide(kalles, shots, 1, 1).keys():
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(kalle)
+            SCORE = SCORE + 1
+
+         # See if shots hit the leos.
+        for leo in pg.sprite.groupcollide(leos, shots, 1, 1).keys():
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(leo)
+            SCORE = SCORE + 1
+
+     # See if leo academyawards hit the player.
+        for academyaward in pg.sprite.spritecollide(player, academyawards, 1):
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(player)
+            Explosion(academyaward)
+            player.kill()
 
         # See if alien boms hit the player.
         for bomb in pg.sprite.spritecollide(player, bombs, 1):

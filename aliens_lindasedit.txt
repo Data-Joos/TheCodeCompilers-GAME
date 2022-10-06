@@ -1,0 +1,105 @@
+Rad 1: Tog bort '#!/usr/bin/env python' pga felkod "The term '/usr/bin/env' is not recognized as the name of a cmdlet, function, script file, or operable program." Men behöll rad 1 tom för att inte störa kodens nummerering...
+
+Rad 2-24: Kommenterade ut varje rad med # för eftersom att """kommentera med flerradskommentar på det här sättet inte fungerade utan att störa koden"""
+
+Rad 40-42, och 45-46: skapade nya spelkonstanter till mina klasser
+
+Rad 115-163: Skapade två nya fiende-klasser baserat på den befintliga Alien fienden. Min (Leo) och "Martins" (Kalle).
+    - Gav Leo hastigheten 11 och Kalle hastigheten 16. Aliens hastighet är fortfarande 13.
+
+Rad 221: Ändrade kulans speed = från -11 till -27
+
+Rad 234: Ändrade första argumentet från (self.speed, self.speed) till (0, self.speed) när jag insåg att det är argumenten som styr kulans riktning. Insåg detta när jag kollade på motsvarande kod för bombens klass på rad 247.
+
+[OBS: MINSKADE NER PIXEL STORLEKEN PÅ MIN LEO BILD i paint från 400*542 px till 60*143 px! Innan jag gjorde det tog bilden upp större delen av rutan och sprängde spelaren direkt.]
+
+Rad 238-261: Skapade en ny bomb klass (Academyaward) som jag kopplade ihop med min fiende Leo.
+    - Detta så att Leo släpper Oscar pokaler på spelaren, istället för bomber som Alien (och Kalle) släpper...
+
+Rad 330-331, och 333: Skapade länkar till de nya spritesen som används till mina nya klasser.
+
+Rad 360-361, 364, och 367-368: Skapade nya game groups till mina nya klasser.
+Rad 373-374 och 377: Skapade nya containers till mina nya game groups.
+
+Rad 384-385: Skapade nya startvärden för nya fiendens reloade/respawn.
+
+Rad 392-397: Skapade nya start sprites med if statements som är kopplade till grupperna.
+Rad 448-461: Skapade nya kodstycken för nya fiendens (Leo och Kalle) respawn.
+
+Rad 482-489: Skapade en ny funktion för kollision mellar Kalle och spelaren.
+Rad 492-503: Skapade först en funktion för fienden Leo 'bomb' Academyawards som han släpper ist för bomber. Sen skapade jag en funktion för kollision mellar Leo och spelaren.
+Rad 511-523: Nya funktioner för om spelarens skott träffar nya fienden.
+Rad 526-531: Ny funktion för om nya 'bomben' Academyaward träffar fienden.
+
+Rad 252??: bytte ut alla alien bilder mot leoleft2.gif
+
+Rad 40: LEO_ODDS = 22
+Rad 43: LEO_RELOAD = 12
+Rad 110-133: La in min klass Leo()
+Rad 276: skapade Leo.image med bara leoleft2.gif (3st)
+Rad 304: leos = pg.sprite.Group()
+Rad 309: lastleo = pg.sprite.GroupSingle()
+Rad 314: la in min container Leo.containers = leos, all, lastleo
+Rad 323: leoreload = LEO_RELOAD
+Rad 330-332: Leo()
+    if pg.font:
+        all.add(Score())
+
+
+Rad 210-233:
+class Bomb(pg.sprite.Sprite):
+    """A bomb the aliens drop."""
+
+    speed = 9
+    images = []
+
+    def __init__(self, alien):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect(midbottom=alien.rect.move(0, 5).midbottom)
+
+    def update(self):
+        """called every time around the game loop.
+
+        Every frame we move the sprite 'rect' down.
+        When it reaches the bottom we:
+
+        - make an explosion.
+        - remove the Bomb.
+        """
+        self.rect.move_ip(0, self.speed)
+        if self.rect.bottom >= 470:
+            Explosion(self)
+            self.kill()
+
+Rad 383-388: 
+        #L: Create new Leo
+        if leoreload:
+            leoreload = leoreload -1
+        elif not int(random.random() * LEO_ODDS):
+            Leo()
+            leoreload = LEO_RELOAD
+
+Rad 401-402:
+ # Drop bombs
+        if lastleo and not int(random.random() * BOMB_ODDS):
+            Bomb(lastleo.sprite)
+
+Rad 413-422: 
+              # Detect collisions between aliens and players.
+        for leo in pg.sprite.spritecollide(player, leos, 1):
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(leo)
+            Explosion(player)
+            SCORE = SCORE + 1
+            player.kill()
+
+Rad 429-434:
+        # See if shots hit the aliens.
+        for leo in pg.sprite.groupcollide(leos, shots, 1, 1).keys():
+            if pg.mixer:
+                boom_sound.play()
+            Explosion(leo)
+            SCORE = SCORE + 1
+
