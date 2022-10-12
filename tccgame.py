@@ -55,6 +55,7 @@ SCORE = 0
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
+# test-kommentar
 
 def load_image(file):
     """loads an image, prepares it for play"""
