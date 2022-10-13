@@ -270,6 +270,13 @@ class Alien(pg.sprite.Sprite):
         self.frame = self.frame + 1
         self.image = self.images[self.frame // self.animcycle % 3]
 
+class StartKnapp(pg.sprite.Sprite):
+    images = []
+
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
 
 class Explosion(pg.sprite.Sprite):
     """An explosion. Hopefully the Alien and not the player!"""
@@ -419,6 +426,7 @@ def main(winstyle=0):
     Academyaward.images = [load_image("academyaward2.gif")]
     Bomb.images = [load_image("bomb.gif")]
     Shot.images = [load_image("falukorv.png")]
+    StartKnapp.images = [load_image("start.png"), load_image("start.png")] 
 
     # decorate the game window
     icon = pg.transform.scale(Alien.images[0], (32, 32))
@@ -459,6 +467,7 @@ def main(winstyle=0):
     lastdragon = pg.sprite.GroupSingle()
     lastthanos = pg.sprite.GroupSingle()
     lastalien = pg.sprite.GroupSingle()
+    menu = pg.sprite.Group()
 
     # assign default groups to each sprite class
     Player.containers = all
@@ -473,6 +482,7 @@ def main(winstyle=0):
     Bomb.containers = bombs, all
     Explosion.containers = all
     Score.containers = all
+    StartKnapp.containers = menu
 
     # Create Some Starting Values
     global score
@@ -505,6 +515,30 @@ def main(winstyle=0):
     Alien()  # note, this 'lives' because it goes into a sprite group
     if pg.font:
         all.add(Score())
+
+#Addera startmenyn
+    start_knapp = StartKnapp()
+    start_knapp.rect.move_ip(150, 100)
+    start_game = False
+
+    quit_game = pg.key.get_pressed()
+    while not start_game:
+        for event in pg.event.get():
+            if event.type == pg.KEYDOWN and event.key == pg.K_q:
+                pg.quit()
+            elif event.type == pg.KEYDOWN:
+                bgdtile = load_image("background.gif")
+                background = pg.Surface(SCREENRECT.size)
+                for x in range(0, SCREENRECT.width, bgdtile.get_width()):
+                    background.blit(bgdtile, (x, 0))
+                screen.blit(background, (0, 0))
+                pg.display.flip()
+                
+                start_game = True
+                                
+        pg.display.flip()
+        dirty = menu.draw(screen)
+        pg.display.update(dirty)
 
     # Run our main loop whilst the player is alive.
     while player.alive():
