@@ -35,7 +35,7 @@ if not pg.image.get_extended():
 
 
 # game constants
-MAX_SHOTS = 2  # most player bullets onscreen
+MAX_SHOTS = 3  # most player bullets onscreen
 ALIEN_ODDS = 12  # chances a new alien appears
 THANOS_ODDS = 12
 DRAGON_ODDS = 12 
@@ -91,7 +91,7 @@ def load_sound(file):
 class Player(pg.sprite.Sprite):
     """Representing the player as a moon buggy type car."""
 
-    speed = 10
+    speed = 50
     bounce = 24
     gun_offset = -11
     images = []
@@ -271,6 +271,28 @@ class Alien(pg.sprite.Sprite):
         self.frame = self.frame + 1
         self.image = self.images[self.frame // self.animcycle % 3]
 
+class startKnapp(pg.sprite.Sprite):
+    images = []
+
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+    
+    def nedtryckt(self):
+        self.image = self.images[1]
+    
+    def upptryckt(self):
+        self.image = self.images[0]
+
+class avslutaKnapp(startKnapp):
+
+    def __init__(self, funktion_vid_tryck):
+        super().__init__()
+        self.funktion_vid_knapptryck = funktion_vid_tryck
+
+    def knapptryck(self):
+        self.funktion_vid_knapptryck()
 
 class Explosion(pg.sprite.Sprite):
     """An explosion. Hopefully the Alien and not the player!"""
@@ -421,6 +443,9 @@ def main(winstyle=0):
     Bomb.images = [load_image("bomb.gif")]
     Shot.images = [load_image("falukorv.png")]
 
+    startKnapp.images = [load_image("startKnapp.jpg"), load_image("startKnapp.jpg")]
+    avslutaKnapp.images = [load_image("Exit.png"), load_image("Exit.png")]
+
     # decorate the game window
     icon = pg.transform.scale(Alien.images[0], (32, 32))
     pg.display.set_icon(icon)
@@ -461,6 +486,8 @@ def main(winstyle=0):
     lastthanos = pg.sprite.GroupSingle()
     lastalien = pg.sprite.GroupSingle()
 
+    menu = pg.sprite.Group()
+
     # assign default groups to each sprite class
     Player.containers = all
     Thanos.containers = thanoss, all, lastthanos
@@ -474,6 +501,9 @@ def main(winstyle=0):
     Bomb.containers = bombs, all
     Explosion.containers = all
     Score.containers = all
+
+    startKnapp.containers = menu
+    avslutaKnapp.containers = menu
 
     # Create Some Starting Values
     global score
@@ -506,6 +536,48 @@ def main(winstyle=0):
     Alien()  # note, this 'lives' because it goes into a sprite group
     if pg.font:
         all.add(Score())
+
+    # Addera startmeny
+    def avslutaFunktion():
+        pg.quit()
+
+    start_knapp = startKnapp()
+    avsluta_knapp = avslutaKnapp(avslutaFunktion)
+    avsluta_knapp.rect.move_ip(0, 135)
+    start_game = False
+    menu.add()
+    
+    while not start_game:
+        for event in pg.event.get():
+            if event.type == pg.KEYDOWN:
+                start_game = True
+            
+            if event.type == pg.MOUSEBUTTONDOWN:
+                if(start_knapp.rect.collidepoint(pg.mouse.get_pos())):
+                    start_knapp.nedtryckt()
+                if(avsluta_knapp.rect.collidepoint(pg.mouse.get_pos())):
+                    avsluta_knapp.knapptryck()
+                    # start game = true
+            elif event.type == pg.MOUSEBUTTONUP:
+                start_knapp.upptryckt()
+                if(start_knapp.rect.collidepoint(pg.mouse.get_pos())):
+                    start_game = True
+        
+            bgdtile = load_image("background.gif")
+            background = pg.Surface(SCREENRECT.size)
+            for x in range(0, SCREENRECT.width, bgdtile.get_width()):
+                background.blit(bgdtile, (x, 0))
+            screen.blit(background, (0, 0))
+            pg.display.flip()
+    
+        pg.display.flip()
+        dirty = menu.draw(screen)
+        pg.display.update(dirty)
+
+    # menu while-loop ends
+
+    pg.mouse.set_visible(False)
+
 
     # Run our main loop whilst the player is alive.
     while player.alive():
