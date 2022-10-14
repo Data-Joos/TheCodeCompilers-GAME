@@ -1,27 +1,27 @@
+#!/usr/bin/env python
+""" pygame.examples.aliens
 
-#""" pygame.examples.aliens
+Shows a mini game where you have to defend against aliens.
 
-#Shows a mini game where you have to defend against aliens.
+What does it show you about pygame?
 
-#What does it show you about pygame?
-
-#* pg.sprite, the difference between Sprite and Group.
-#* dirty rectangle optimization for processing for speed.
-#* music with pg.mixer.music, including fadeout
-#* sound effects with pg.Sound
-#* event processing, keyboard handling, QUIT handling.
-#* a main loop frame limited with a game clock from pg.time.Clock
-#* fullscreen switching.
+* pg.sprite, the difference between Sprite and Group.
+* dirty rectangle optimization for processing for speed.
+* music with pg.mixer.music, including fadeout
+* sound effects with pg.Sound
+* event processing, keyboard handling, QUIT handling.
+* a main loop frame limited with a game clock from pg.time.Clock
+* fullscreen switching.
 
 
-#Controls
-#--------
+Controls
+--------
 
-#* Left and right arrows to move.
-#* Space bar to shoot
-#* f key to toggle between fullscreen.
+* Left and right arrows to move.
+* Space bar to shoot
+* f key to toggle between fullscreen.
 
-#"""
+"""
 
 import random
 import os
@@ -35,21 +35,12 @@ if not pg.image.get_extended():
 
 
 # game constants
-MAX_SHOTS = 2  # most player bullets onscreen
-ALIEN_ODDS = 12  # chances a new alien appears
-THANOS_ODDS = 12
-DRAGON_ODDS = 12 
-EDWARDBLOM_ODDS = 12
-LEO_ODDS = 12
-KALLE_ODDS = 12
-ACADEMYAWARD_ODDS = 80
+MAX_SHOTS = 20  # most player bullets onscreen
+ALIEN_ODDS = 22  # chances a new alien appears
+DRAGON_ODDS = 22 # chances a new dragon appears
 BOMB_ODDS = 60  # chances a new bomb will drop
-ALIEN_RELOAD = 50  # frames between new aliens
-THANOS_RELOAD = 50
-DRAGON_RELOAD = 50
-EDWARDBLOM_RELOAD = 50
-LEO_RELOAD = 50
-KALLE_RELOAD = 50
+ALIEN_RELOAD = 12  # frames between new aliens
+DRAGON_RELOAD = 12 # frames between new dragons
 SCREENRECT = pg.Rect(0, 0, 640, 480)
 SCORE = 0
 
@@ -90,9 +81,9 @@ def load_sound(file):
 class Player(pg.sprite.Sprite):
     """Representing the player as a moon buggy type car."""
 
-    speed = 10
-    bounce = 24
-    gun_offset = -11
+    speed = 30
+    bounce = 20
+    gun_offset = 5
     images = []
 
     def __init__(self):
@@ -118,32 +109,6 @@ class Player(pg.sprite.Sprite):
         pos = self.facing * self.gun_offset + self.rect.centerx
         return pos, self.rect.top
 
-
-class Thanos(pg.sprite.Sprite):
-    
-    speed = 13
-    animcycle = 12
-    images = []
-
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self, self.containers)
-        self.image = self.images[0]
-        self.rect = self.image.get_rect()
-        self.facing = random.choice((-1, 1)) * Thanos.speed
-        self.frame = 0
-        if self.facing < 0:
-            self.rect.right = SCREENRECT.right
-
-    def update(self):
-        self.rect.move_ip(self.facing, 0)
-        if not SCREENRECT.contains(self.rect):
-            self.facing = -self.facing
-            self.rect.top = self.rect.bottom + 1
-            self.rect = self.rect.clamp(SCREENRECT)
-        self.frame = self.frame + 1
-        self.image = self.images[self.frame // self.animcycle % 3]
-
-
 class Dragon(pg.sprite.Sprite):
     """An Dragon that slowly moves dwon the screen"""
 
@@ -167,88 +132,13 @@ class Dragon(pg.sprite.Sprite):
             self.rect.top = self.rect.bottom + 1
             self.rect = self.rect.clamp(SCREENRECT)
         self.frame = self.frame + 1
-        self.image = self.images[self.frame // self.animcycle % 3]        
-
-
-class Edwardblom(pg.sprite.Sprite):
-      
-      speed = 33
-      animcycle = 12
-      images = []
-
-      def __init__(self):
-        pg.sprite.Sprite.__init__(self, self.containers)
-        self.image = self.images[0]
-        self.rect = self.image.get_rect()
-        self.facing = random.choice((-1, 1)) * Edwardblom.speed
-        self.frame = 0
-        if self.facing < 0:
-            self.rect.right = SCREENRECT.right
-
-      def update(self):
-        self.rect.move_ip(self.facing, 0)
-        if not SCREENRECT.contains(self.rect):
-            self.facing = -self.facing
-            self.rect.top = self.rect.bottom + 1
-            self.rect = self.rect.clamp(SCREENRECT)
-        self.frame = self.frame + 1
-        self.image = self.images[self.frame // self.animcycle % 3]     
-
-
-class Leo(pg.sprite.Sprite):
-
-    speed = 11
-    animcycle = 12
-    images = []
-
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self, self.containers)
-        self.image = self.images[0]
-        self.rect = self.image.get_rect()
-        self.facing = random.choice((-1,1)) * Leo.speed
-        self.frame = 0
-        if self.facing < 0:
-            self.rect.right = SCREENRECT.right
-
-
-    def update(self):
-        self.rect.move_ip(self.facing, 0)
-        if not SCREENRECT.contains(self.rect):
-            self.facing = -self.facing
-            self.rect.top = self.rect.bottom +1
-            self.rect = self.rect.clamp(SCREENRECT)
-        self.frame = self.frame +1
         self.image = self.images[self.frame // self.animcycle % 3]
 
-class Kalle(pg.sprite.Sprite):
-    """An alien space ship. That slowly moves down the screen."""
-
-    speed = 16
-    animcycle = 12
-    images = []
-
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self, self.containers)
-        self.image = self.images[0]
-        self.rect = self.image.get_rect()
-        self.facing = random.choice((-1, 1)) * Kalle.speed
-        self.frame = 0
-        if self.facing < 0:
-            self.rect.right = SCREENRECT.right
-
-    def update(self):
-        self.rect.move_ip(self.facing, 0)
-        if not SCREENRECT.contains(self.rect):
-            self.facing = -self.facing
-            self.rect.top = self.rect.bottom + 1
-            self.rect = self.rect.clamp(SCREENRECT)
-        self.frame = self.frame + 1
-        self.image = self.images[self.frame // self.animcycle % 3]
 
 class Alien(pg.sprite.Sprite):
     """An alien space ship. That slowly moves down the screen."""
 
-    speed = 13
+    speed = 18
     animcycle = 12
     images = []
 
@@ -301,7 +191,7 @@ class Explosion(pg.sprite.Sprite):
 class Shot(pg.sprite.Sprite):
     """a bullet the Player sprite fires."""
 
-    speed = -27
+    speed = -30
     images = []
 
     def __init__(self, pos):
@@ -318,35 +208,11 @@ class Shot(pg.sprite.Sprite):
         if self.rect.top <= 0:
             self.kill()
 
-class Academyaward(pg.sprite.Sprite):
-    """A bomb the aliens drop."""
-
-    speed = 9
-    images = []
-
-    def __init__(self, leo):
-        pg.sprite.Sprite.__init__(self, self.containers)
-        self.image = self.images[0]
-        self.rect = self.image.get_rect(midbottom=leo.rect.move(0, 5).midbottom)
-
-    def update(self):
-        """called every time around the game loop.
-
-        Every frame we move the sprite 'rect' down.
-        When it reaches the bottom we:
-
-        - make an explosion.
-        - remove the Bomb.
-        """
-        self.rect.move_ip(0, self.speed)
-        if self.rect.bottom >= 470:
-            Explosion(self)
-            self.kill()
 
 class Bomb(pg.sprite.Sprite):
     """A bomb the aliens drop."""
 
-    speed = 9
+    speed = 15
     images = []
 
     def __init__(self, alien):
@@ -410,15 +276,10 @@ def main(winstyle=0):
     Player.images = [img, pg.transform.flip(img, 1, 0)]
     img = load_image("explosion1.gif")
     Explosion.images = [img, pg.transform.flip(img, 1, 1)]
-    Thanos.images = [load_image(im) for im in ("thanos.gif", "thanos.gif", "thanos.gif")]
-    Edwardblom.images = [load_image(im) for im in ("edwardblom.png", "edwardblom.png","edwardblom.png")]
     Dragon.images = [load_image(im) for im in ("dragon.gif", "dragon.gif", "dragon.gif")]
-    Leo.images = [load_image(im) for im in ("leoleft2.gif", "leoleft2.gif", "leoleft2.gif")]
-    Kalle.images = [load_image(im) for im in ("kalle.gif", "kalle.gif", "kalle.gif")]
     Alien.images = [load_image(im) for im in ("alien1.gif", "alien2.gif", "alien3.gif")]
-    Academyaward.images = [load_image("academyaward2.gif")]
     Bomb.images = [load_image("bomb.gif")]
-    Shot.images = [load_image("falukorv.png")]
+    Shot.images = [load_image("shot.gif")]
 
     # decorate the game window
     icon = pg.transform.scale(Alien.images[0], (32, 32))
@@ -436,76 +297,47 @@ def main(winstyle=0):
 
     # load the sound effects
     boom_sound = load_sound("boom.wav")
-    shoot_sound = load_sound("splurt.mp3")
+    shoot_sound = load_sound("car_door.wav")
     if pg.mixer:
         music = os.path.join(main_dir, "data", "house_lo.wav")
         pg.mixer.music.load(music)
         pg.mixer.music.play(-1)
 
     # Initialize Game Groups
-    thanoss = pg.sprite.Group()
-    dragons = pg.sprite.Group()
-    edwards = pg.sprite.Group()
-    leos = pg.sprite.Group()
-    kalles = pg.sprite.Group()
     aliens = pg.sprite.Group()
+    dragons = pg.sprite.Group()
     shots = pg.sprite.Group()
-    academyawards = pg.sprite.Group()
     bombs = pg.sprite.Group()
     all = pg.sprite.RenderUpdates()
-    lastkalle = pg.sprite.GroupSingle()
-    lastleo = pg.sprite.GroupSingle()
-    lastedward = pg.sprite.GroupSingle()
-    lastdragon = pg.sprite.GroupSingle()
-    lastthanos = pg.sprite.GroupSingle()
     lastalien = pg.sprite.GroupSingle()
+    lastdragon = pg.sprite.GroupSingle()
 
     # assign default groups to each sprite class
     Player.containers = all
-    Thanos.containers = thanoss, all, lastthanos
-    Leo.containers = leos, all, lastleo
-    Kalle.containers = aliens, all, lastkalle
     Alien.containers = aliens, all, lastalien
     Dragon.containers = dragons, all, lastdragon
-    Edwardblom.containers = edwards, all, lastedward
     Shot.containers = shots, all
-    Academyaward.containers = academyawards, all
     Bomb.containers = bombs, all
     Explosion.containers = all
     Score.containers = all
 
     # Create Some Starting Values
     global score
-    thanosreload = THANOS_RELOAD
-    dragonreload = DRAGON_RELOAD
-    edwardblomreload = EDWARDBLOM_RELOAD
-    leoreload = LEO_RELOAD
-    kallereload = KALLE_RELOAD
     alienreload = ALIEN_RELOAD
+    dragonreload = DRAGON_RELOAD
     clock = pg.time.Clock()
 
     # initialize our starting sprites
     global SCORE
     player = Player()
-    Thanos()
-    if pg.font:
-        all.add(Score())
     Dragon()
     if pg.font:
         all.add(Score())
-    Edwardblom()
-    if pg.font:
-        all.add(Score())    
-    Leo()
-    if pg.font:
-        all.add(Score())
-    Kalle()
-    if pg.font:
-        all.add(Score())
+    
     Alien()  # note, this 'lives' because it goes into a sprite group
     if pg.font:
-        all.add(Score())
-
+        all.add(Score()) 
+    
     # Run our main loop whilst the player is alive.
     while player.alive():
 
@@ -552,39 +384,12 @@ def main(winstyle=0):
                 shoot_sound.play()
         player.reloading = firing
 
-        if thanosreload:
-            thanosreload = thanosreload - 1
-        elif not int(random.random() * THANOS_ODDS):
-            Thanos()
-            thanosreload = THANOS_RELOAD
-
-        #Create new dragon
+        # Create new dragon
         if dragonreload:
             dragonreload = dragonreload - 1
         elif not int(random.random() * DRAGON_ODDS):
             Dragon()
             dragonreload = DRAGON_RELOAD
-
-        #Create new edward
-        if edwardblomreload:
-            edwardblomreload = edwardblomreload - 1
-        elif not int(random.random() * EDWARDBLOM_ODDS):
-            Edwardblom()
-            edwardblomreload = EDWARDBLOM_RELOAD   
-
-        #L: Create new Leo
-        if leoreload:
-            leoreload = leoreload -1
-        elif not int(random.random() * LEO_ODDS):
-            Leo()
-            leoreload = LEO_RELOAD
-
-        #L: Create new Kalle
-        if kallereload:
-            kallereload = kallereload -1
-        elif not int(random.random() * KALLE_ODDS):
-            Kalle()
-            kallereload = KALLE_RELOAD
 
         # Create new alien
         if alienreload:
@@ -592,30 +397,16 @@ def main(winstyle=0):
         elif not int(random.random() * ALIEN_ODDS):
             Alien()
             alienreload = ALIEN_RELOAD
-
-        # Drop bombs
-        if lastthanos and not int(random.random() * BOMB_ODDS):
-            Bomb(lastthanos.sprite)
-
+        
+        # Drop bombs dragon
         if lastdragon and not int(random.random() * BOMB_ODDS):
             Bomb(lastdragon.sprite)
 
-        if lastedward and not int(random.random() * BOMB_ODDS):
-            Bomb(lastedward.sprite)
-
+        # Drop bombs
         if lastalien and not int(random.random() * BOMB_ODDS):
             Bomb(lastalien.sprite)
 
         # Detect collisions between aliens and players.
-        for thanos in pg.sprite.spritecollide(player, thanoss, 1):
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(thanos)
-            Explosion(player)
-            SCORE = SCORE + 1
-            player.kill()
-
-
         for dragon in pg.sprite.spritecollide(player, dragons, 1):
             if pg.mixer:
                 boom_sound.play()
@@ -624,16 +415,7 @@ def main(winstyle=0):
             SCORE = SCORE + 1
             player.kill()
 
-
-        for edwardblom in pg.sprite.spritecollide(player, edwards, 1):
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(edwardblom)
-            Explosion(player)
-            SCORE = SCORE + 1
-            player.kill()   
-
-
+        # Detect collisions between aliens and players.
         for alien in pg.sprite.spritecollide(player, aliens, 1):
             if pg.mixer:
                 boom_sound.play()
@@ -642,74 +424,19 @@ def main(winstyle=0):
             SCORE = SCORE + 1
             player.kill()
 
-        # Detect collisions between aliens and players.
-        for kalle in pg.sprite.spritecollide(player, kalles, 1):
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(kalle)
-            Explosion(player)
-            SCORE = SCORE + 1
-            player.kill()
-
-        # Drop Academy awards
-        if lastleo and not int(random.random() * ACADEMYAWARD_ODDS):
-            Academyaward(lastleo.sprite)
-
-                # Detect collisions between aliens and players.
-        for leo in pg.sprite.spritecollide(player, leos, 1):
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(leo)
-            Explosion(player)
-            SCORE = SCORE + 1
-            player.kill()
-
-        # See if shots hit the aliens.
-        for thanos in pg.sprite.groupcollide(thanoss, shots, 1, 1).keys():
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(thanos)
-            SCORE = SCORE + 1  
-
+        # See if shots hit the dragon
         for dragon in pg.sprite.groupcollide(dragons, shots, 1, 1).keys():
             if pg.mixer:
                 boom_sound.play()
             Explosion(dragon)
             SCORE = SCORE + 1
 
-        for edwardblom in pg.sprite.groupcollide(edwards, shots, 1, 1).keys():
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(edwardblom)
-            SCORE =SCORE + 1    
-
+        # See if shots hit the aliens.
         for alien in pg.sprite.groupcollide(aliens, shots, 1, 1).keys():
             if pg.mixer:
                 boom_sound.play()
             Explosion(alien)
             SCORE = SCORE + 1
-
-        # See if shots hit the kalles.
-        for kalle in pg.sprite.groupcollide(kalles, shots, 1, 1).keys():
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(kalle)
-            SCORE = SCORE + 1
-
-         # See if shots hit the leos.
-        for leo in pg.sprite.groupcollide(leos, shots, 1, 1).keys():
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(leo)
-            SCORE = SCORE + 1
-
-     # See if leo academyawards hit the player.
-        for academyaward in pg.sprite.spritecollide(player, academyawards, 1):
-            if pg.mixer:
-                boom_sound.play()
-            Explosion(player)
-            Explosion(academyaward)
-            player.kill()
 
         # See if alien boms hit the player.
         for bomb in pg.sprite.spritecollide(player, bombs, 1):
@@ -724,7 +451,7 @@ def main(winstyle=0):
         pg.display.update(dirty)
 
         # cap the framerate at 40fps. Also called 40HZ or 40 times per second.
-        clock.tick(15)
+        clock.tick(5)
 
     if pg.mixer:
         pg.mixer.music.fadeout(1000)
@@ -733,5 +460,5 @@ def main(winstyle=0):
 
 # call the "main" function if running this script
 if __name__ == "__main__":
-    main() 
-    pg.quit()
+    main()
+    pg.quit() 
